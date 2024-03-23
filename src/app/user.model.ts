@@ -5,4 +5,5 @@ export interface User {
     createdAt?: Date;
     updatedAt?: Date;
     token?: string;
+    verifiedDevice?: boolean;
 }

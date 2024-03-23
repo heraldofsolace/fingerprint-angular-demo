@@ -5,7 +5,9 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
 import { first } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
-
+import {
+  FingerprintjsProAngularService,
+} from '@fingerprintjs/fingerprintjs-pro-angular'
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -22,6 +24,7 @@ export class LoginComponent {
       private route: ActivatedRoute,
       private router: Router,
       private authService: AuthService,
+      private fingerprintService: FingerprintjsProAngularService,
   ) { }
 
   ngOnInit() {
@@ -33,7 +36,7 @@ export class LoginComponent {
 
   get f() { return this.form.controls; }
   
-  onSubmit() {
+  async onSubmit() {
     this.submitted = true;
 
     if (this.form.invalid) {
@@ -41,11 +44,16 @@ export class LoginComponent {
     }
 
     this.loading = true;
-    this.authService.login(this.f.email.value, this.f.password.value)
+    const data = await this.fingerprintService.getVisitorData();
+    this.authService.login(this.f.email.value, this.f.password.value, data.requestId, data.visitorId)
         .pipe(first())
         .subscribe({
             next: () => {
+              if(this.authService.userValue?.verifiedDevice) {
                 this.router.navigate(['../home'], { relativeTo: this.route });
+              } else {
+                this.router.navigate(['../verify'], { relativeTo: this.route });
+              }
             },
             error: e => {
                 alert(e.error.error);

@@ -4,11 +4,18 @@ import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } 
 import { AuthService } from '../auth.service';
 import { first } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
-
+import {
+  FingerprintjsProAngularService,
+} from '@fingerprintjs/fingerprintjs-pro-angular'
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule,FormsModule, ReactiveFormsModule, RouterModule],
+  imports: [
+    CommonModule,
+    FormsModule, 
+    ReactiveFormsModule, 
+    RouterModule,
+  ],
   templateUrl: './register.component.html',
 })
 export class RegisterComponent {
@@ -21,6 +28,7 @@ export class RegisterComponent {
       private route: ActivatedRoute,
       private router: Router,
       private authService: AuthService,
+      private fingerprintService: FingerprintjsProAngularService,
   ) { }
 
   ngOnInit() {
@@ -33,7 +41,7 @@ export class RegisterComponent {
 
   get f() { return this.form.controls; }
 
-  onSubmit() {
+  async onSubmit() {
     this.submitted = true;
 
 
@@ -48,15 +56,16 @@ export class RegisterComponent {
 
 
     this.loading = true;
-    this.authService.register(this.f.email.value, this.f.password.value, this.f.password_confirm.value)
+    const data = await this.fingerprintService.getVisitorData();
+    this.authService.register(this.f.email.value, this.f.password.value, this.f.password_confirm.value, data.visitorId)
         .pipe(first())
         .subscribe({
             next: () => {
                 alert('Registration successful');
                 this.router.navigate(['../login'], { relativeTo: this.route });
             },
-            error: error => {
-                alert(error);
+            error: e => {
+                alert(e.error.error);
                 this.loading = false;
             }
         });
