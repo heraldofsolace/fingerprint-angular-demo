@@ -54,12 +54,17 @@ app.post('/login', async (req, res) => {
     }
 
     const event = await client.getEvent(request_id);
-    if(event.products?.identification?.data?.visitorId !== visitor_id) {
-        return res.status(401).send({ error: 'Visitor ID has been tampered with' });
+    const visitorData = event.products?.identification?.data;
+    if(visitorData?.visitorId !== visitor_id) {
+    	return res.status(401).send({ error: 'Visitor ID has been tampered with' });
     }
-
-    if(event.products?.identification?.data?.incognito) {
-        return res.status(401).send({ error: 'Incognito mode detected' });
+    
+    if (new Date().getTime() - visitorData?.timestamp > 3000) {
+    	return res.status(401).send({ error: 'Fingerprinting event was more than 3 seconds ago' });
+    }
+    
+    if (req.header("x-forwarded-for").split(",")[0] !== visitorData.ip) {
+     	return res.status(401).send({ error: ‘IP address does not match' });
     }
 
     const user = await User.findOne({ where: { email }, include: Fingerprint });
